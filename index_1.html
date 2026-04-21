@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maturitní encyklopedie 2025</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,700;1,600&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    /* Základní nastavení písma pro celé tělo */
+    html, body { 
+      height: 100%; 
+      overflow: hidden; 
+      background: #080808; 
+      color: rgba(255, 255, 255, 0.9); /* Jemnější bílá pro komfort očí */
+      font-family: 'Inter', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      background: rgba(8,8,8,0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid rgba(255,255,255,0.07); z-index: 1000;
+      display: flex; align-items: center; padding: 0 24px; gap: 16px;
+    }
+
+    .search-wrapper { position: relative; }
+    .nav-search {
+      display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 7px 13px;
+    }
+
+    #search-input { 
+      background: none; border: none; outline: none; color: white; 
+      font-size: 13px; width: 220px; font-family: 'Inter', sans-serif; 
+    }
+
+    #search-results {
+      position: absolute; top: 110%; left: 0; right: 0;
+      background: #121212; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; overflow: hidden; display: none; z-index: 1100;
+    }
+
+    .result-item { 
+      padding: 10px 15px; font-size: 13px; cursor: pointer; 
+      border-bottom: 1px solid rgba(255,255,255,0.05); 
+    }
+
+    .nav-logo { 
+      flex: 1; text-align: right; 
+      font-family: 'Cormorant+Garamond', serif; 
+      font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.4); 
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    #scroll-container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
+    #scroll-container::-webkit-scrollbar { display: none; }
+
+    .book-slide { height: 100vh; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    
+    .slide-header { padding: 90px 40px 18px; position: relative; z-index: 2; }
+    .slide-emoji { font-size: 36px; display: block; margin-bottom: 10px; }
+    
+    /* Nadpis knihy - Cormorant Garamond */
+    .slide-title { 
+      font-family: 'Cormorant Garamond', serif; 
+      font-size: clamp(2.5rem, 6vw, 4.5rem); 
+      font-weight: 700; line-height: 1.1; margin-bottom: 8px; 
+      color: #fff;
+    }
+
+    /* Meta info a popisky - JetBrains Mono */
+    .slide-meta { 
+      font-size: 14px; color: rgba(255,255,255,0.5); 
+      font-family: 'JetBrains Mono', monospace; line-height: 1.6; 
+    }
+
+    .tab-bar { display: flex; border-bottom: 0.5px solid rgba(255,255,255,0.08); padding: 0 38px; gap: 5px; overflow-x: auto; z-index: 2; }
+    
+    .tab { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 10px; padding: 12px 10px; color: rgba(255,255,255,0.3); 
+      cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em;
+      border-bottom: 2px solid transparent; transition: 0.2s;
+    }
+    .tab.active { color: #fff; }
+
+    .sections-area { flex: 1; overflow: hidden; position: relative; z-index: 2; }
+    .section { display: none; height: 100%; overflow-y: auto; padding: 18px 40px 120px; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .section.visible { display: flex; flex-direction: column; }
+    
+    /* Obdélníky pro text - Inter */
+    .tip-box { 
+      background: rgba(255,255,255,0.03); 
+      border: 1px solid rgba(255,255,255,0.08); 
+      border-radius: 12px; padding: 18px; margin-bottom: 14px; 
+    }
+
+    .tip-label { 
+      font-size: 11px; font-family: 'JetBrains Mono', monospace; 
+      letter-spacing: 0.1em; text-transform: uppercase; 
+      margin-bottom: 8px; display: block; opacity: 0.5; 
+    }
+
+    .context-text { 
+      font-size: 15px; line-height: 1.7; 
+      font-weight: 300; color: rgba(255,255,255,0.85); 
+    }
+
+    #dots { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+    .dot { width: 4px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 50%; cursor: pointer; transition: 0.3s; }
+    .dot.active { background: white; height: 20px; border-radius: 4px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #080808; color: white; font-family: 'DM Sans', sans-serif; }
+
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      background: rgba(8,8,8,0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid rgba(255,255,255,0.07); z-index: 1000;
+      display: flex; align-items: center; padding: 0 24px; gap: 16px;
+    }
+    .search-wrapper { position: relative; }
+    .nav-search {
+      display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 7px 13px;
+    }
+    #search-input { background: none; border: none; outline: none; color: white; font-size: 13px; width: 220px; }
+    #search-results {
+      position: absolute; top: 110%; left: 0; right: 0;
+      background: #121212; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; overflow: hidden; display: none; z-index: 1100;
+    }
+    .result-item { padding: 10px 15px; font-size: 13px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .result-item:hover { background: rgba(255,255,255,0.1); }
+.nav-logo { 
+  flex: 1; 
+  text-align: right; 
+  font-family: 'JetBrains Mono', monospace; /* Změna fontu */
+  font-size: 22px; 
+  font-weight: 500; 
+  color: rgba(255,255,255,0.5); 
+  text-transform: none;                      /* Zrušení velkých písmen */
+  letter-spacing: -0.02em;
+}
+    #scroll-container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
+    #scroll-container::-webkit-scrollbar { display: none; }
+
+    .book-slide { height: 100vh; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    .slide-header { padding: 90px 40px 18px; position: relative; z-index: 2; }
+    .slide-emoji { font-size: 36px; display: block; margin-bottom: 10px; }
+    .slide-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 700; margin-bottom: 6px; }
+    .slide-meta { font-size: 14px; color: rgba(255,255,255,0.42); font-family: 'DM Mono', monospace; line-height: 1.6; }
+
+    .tab-bar { display: flex; border-bottom: 0.5px solid rgba(255,255,255,0.08); padding: 0 38px; gap: 5px; overflow-x: auto; z-index: 2; }
+    .tab { font-family: 'DM Mono', monospace; font-size: 9px; padding: 12px 10px; color: rgba(255,255,255,0.28); cursor: pointer; text-transform: uppercase; white-space: nowrap; border-bottom: 2px solid transparent; }
+    .tab.active { color: white; }
+
+    .sections-area { flex: 1; overflow: hidden; position: relative; z-index: 2; }
+    .section { display: none; height: 100%; overflow-y: auto; padding: 18px 40px 120px; animation: fadeUp 0.3s ease both; }
+    .section.visible { display: flex; flex-direction: column; }
+    
+    .tip-box { background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 12px; }
+    .tip-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; display: block; opacity: 0.7; }
+    .context-text { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.8); }
+    .highlight { color: #f87171; font-weight: 600; }
+
+    #dots { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+    .dot { width: 4px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 50%; cursor: pointer; transition: 0.3s; }
+    .dot.active { background: white; height: 18px; border-radius: 3px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="search-wrapper">
+    <div class="nav-search">
+      <input id="search-input" type="text" placeholder="Hledat knihu" autocomplete="off">
+    </div>
+    <div id="search-results"></div>
+  </div>
+  <div class="nav-logo">shortreads</div>
+</nav>
+
+<div id="dots"></div>
+<div id="scroll-container"></div>
+
+<script>
+const knihy = [
+  {
+    id: "bila-nemoc",
+    nazev: "Bílá nemoc",
+    autor: "Karel Čapek",
+    rok: "1937",
+    litDruh: "Drama",
+    zaner: "Protiválečná tragédie",
+    emoji: "🦠",
+    akcent: "#c01522",
+    svetla: "#f87171",
+    infoAutor: {
+      smer: "Demokratický proud české literatury (meziválečná literatura)",
+      soucasnici: "Karel Poláček, Eduard Bass, Josef Čapek, Ivan Olbracht",
+      zajimavosti: "Autor navržen 7x na Nobelovu cenu. Byl to blízký přítel T. G. Masaryka (Hovory s TGM).",
+      dila: "R.U.R., Válka s mloky, Krakatit, Matka, Loupežník, Ze života hmyzu"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "HISTORICKÉ POZADÍ", text: "Napsáno v roce 1937 jako bezprostřední reakce na hrozbu nacistického Německa a nástup diktatur v Evropě." },
+        { label: "SPOLEČENSKÝ KONTEXT", text: "Dílo varuje před fanatismem, militarismem a zneužitím vědy pro válečné účely. Bílá nemoc napadá pouze lidi starší 45 let." },
+        { label: "FILOZOFIE", text: "Střet pacifismu (Dr. Galén) a diktatury (Maršál). Ukazuje se tragická bezmocnost jedince proti davu." }
+      ], 
+      tip: "Pamatuj, že Galén má přezdívku 'Dětina' – zdůrazňuje to jeho nevinnost a čisté úmysly." 
+    },
+    postavy: [
+      { jmeno: "Dr. Galén", popis: "Lékař-humanista. Jediný zná lék, ale léčí jen chudé, aby donutil vlády podepsat mír." },
+      { jmeno: "Maršál", popis: "Zosobnění fašismu a vůdcovství. Touží po válce a slávě, dokud sám neonemocní." },
+      { jmeno: "Baron Krüg", popis: "Majitel zbrojovek, Maršálův přítel. Když onemocní, spáchá sebevraždu, protože mu Galén odmítne dát lék." },
+      { jmeno: "Dvorní rada Sigelius", popis: "Kariéristický ředitel kliniky. Galénem pohrdá, ale chce jeho lék pro slávu nemocnice." }
+    ],
+    dej: [
+      { nadpis: "PROLOG A KLINIKA", text: "V zemi se šíří Bílá nemoc (lepra). Dr. Galén objeví lék, ale na klinice Dr. Sigelia léčí jen nejchudší. Sigelius zuří, ale Galén je neústupný: lék vydá jen tehdy, když státy podepíší věčný mír." },
+      { nadpis: "ZBROJAŘŮV PÁD", text: "Onemocní Baron Krüg, dodavatel zbraní. Převlečen za chudáka prosí Galéna o lék. Ten ho pozná a odmítne. Krüg jde za Maršálem, aby ukončil zbrojení, ale ten odmítá. Krüg se zastřelí." },
+      { nadpis: "MARŠÁLOVA DIAGNÓZA", text: "Maršál při projevu zjistí, že má bílou skvrnu. Nejprve chce válku urychlit, ale dcera ho prosí, aby přijal Galénovy podmínky. Maršál pod tíhou smrti souhlasí s mírem." },
+      { nadpis: "TRAGICKÝ KONEC", text: "Galén spěchá s lékem do paláce. Před ním narazí na zfanatizovaný dav volající po válce. Galén odmítne provolávat slávu válce, je davem označen za zrádce a ušlapán. Ampulky jsou rozbity." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ TÉMA", text: "Konflikt mezi humanistickými ideály a bezohlednou státní mocí, která vede k sebezáhubě." }],
+    forma: { polozky: [{ label: "KOMPOZICE", hodnota: "3 dějství, 14 obrazů. Psáno jako divadelní hra." }], tip: "Jazyk je dynamický, časté jsou scénické poznámky." }
+  },
+  {
+    id: "vlaky",
+    nazev: "Ostře sledované vlaky",
+    autor: "Bohumil Hrabal",
+    rok: "1965",
+    litDruh: "Epika",
+    zaner: "Novela",
+    emoji: "🚂",
+    akcent: "#1e3a8a",
+    svetla: "#60a5fa",
+    infoAutor: {
+      smer: "Česká literatura 2. poloviny 20. století (60. léta)",
+      soucasnici: "Milan Kundera, Josef Škvorecký, Arnošt Lustig, Ota Pavel",
+      zajimavosti: "Hrabal byl mistrem tzv. 'pábení'. Pracoval jako dělník, výpravčí i balič starého papíru.",
+      dila: "Obsluhoval jsem anglického krále, Příliš hlučná samota, Postřižiny, Slavnosti sněženek"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "MÍSTO A ČAS", text: "Únor 1945, malá železniční stanice Kostomlaty během německé okupace." },
+        { label: "LITERÁRNÍ METODA", text: "Pábení – postavy (pábitelé) hledají krásu v banalitě a radost v krutém světě." },
+        { label: "SOUVISLOSTI", text: "Film Jiřího Menzela podle této knihy získal Oscara za nejlepší cizojazyčný film." }
+      ], 
+      tip: "Všimni si, jak Hrabal mísí tragiku (válka, smrt) s komikou (razítka na zadek)." 
+    },
+    postavy: [
+      { jmeno: "Miloš Hrma", popis: "Mladý elév dráhy. Trpí komplexem méněcennosti kvůli neúspěšné první sexuální zkušenosti." },
+      { jmeno: "Výpravčí Hubička", popis: "Požitkář, svůdník žen a odbojář. Protiklad upjatého kolaboranta Zedníčka." },
+      { jmeno: "Zdenička Svatá", popis: "Telegrafistka, která se stane obětí (nebo spíše aktérkou) slavné scény s razítky." },
+      { jmeno: "Viktoria Freie", popis: "Partyzánka, která přináší výbušninu a pomůže Milošovi stát se mužem." }
+    ],
+    dej: [
+      { nadpis: "NÁVRAT Z BLÁZINCE", text: "Miloš Hrma se vrací na stanici po pokusu o sebevraždu (podřezal si žíly). Cítí se jako nula, protože 'při tom' s Mášou selhal." },
+      { nadpis: "RAZÍTKOVÁ AFÉRA", text: "Výpravčí Hubička orazítkuje zadek Zdeničky Svaté. Přijíždí komise (Rada Zedníček), která to vyšetřuje jako hanobení německé dráhy." },
+      { nadpis: "NOČNÍ INICIACE", text: "Na stanici dorazí Viktoria Freie s náloží na vlak. Miloš s ní prožije svou první úspěšnou noc na přednostově pohovce a konečně dospěje." },
+      { nadpis: "SMRT NA KONCI VÁLKY", text: "Miloš se rozhodne provést odbojovou akci sám. Hodí bombu na německý vlak. Je však postřelen vojákem. Umírá v příkopu vedle umírajícího Němce a cítí k němu soucit jako k člověku." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Hrdinství nemusí vypadat pateticky; často se rodí z obyčejných lidí v neobyčejných situacích." }],
+    forma: { polozky: [{ label: "JAZYK", hodnota: "Hovorová čeština, dlouhá souvětí, kontrasty stylů." }], tip: "Ich-forma vyprávění (Miloš Hrma)." }
+  },
+  {
+    id: "romeo-a-julie",
+    nazev: "Romeo a Julie",
+    autor: "William Shakespeare",
+    rok: "1595",
+    litDruh: "Drama",
+    zaner: "Renesanční tragédie",
+    emoji: "🗡️",
+    akcent: "#e11d48",
+    svetla: "#fda4af",
+    infoAutor: {
+      smer: "Světová renesance (Alžbětinské divadlo v Anglii)",
+      soucasnici: "Christopher Marlowe, Miguel de Cervantes, Lope de Vega",
+      zajimavosti: "Vlastnil divadlo Globe. Do angličtiny zavedl přes 1700 nových slov a frází.",
+      dila: "Hamlet, Macbeth, Othello, Král Lear, Sen noci svatojánské, Sonety"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "HUMANISMUS", text: "Důraz na lidské city a právo na lásku navzdory rodovým tradicím a nenávisti." },
+        { label: "RENESANČNÍ DIVADLO", text: "Hry se hrály bez kulis, důraz byl kladen na slovo a herecký projev (blankvers)." },
+        { label: "PŮVOD", text: "Námět není původní, Shakespeare čerpal ze starých italských pověstí o dvou milencích z Verony." }
+      ], 
+      tip: "Pamatuj, že tragédie začíná jako komedie (vtipy sluhů, ples) a láme se smrtí Merkucia." 
+    },
+    postavy: [
+      { jmeno: "Romeo Montek", popis: "Mladý šlechtic, zpočátku zamilovaný do Rosaliny, poté fatálně do Julie." },
+      { jmeno: "Julie Kapuletová", popis: "Čtrnáctiletá dívka, která pod vlivem lásky bleskově dospěje a vzepře se rodině." },
+      { jmeno: "Tybalt", popis: "Juliin bratranec, agresivní zastánce rodové cti, zabit Romeem." },
+      { jmeno: "Otec Vavřinec", popis: "Františkánský mnich, který milence oddá v naději, že to usmíří jejich rody." }
+    ],
+    dej: [
+      { nadpis: "OSUDOVÉ SETKÁNÍ", text: "Romeo se vloupe na ples nepřátelských Kapuletů. Spatří Julii a oba se do sebe okamžitě zamilují. Následuje balkónová scéna a tajná svatba u bratra Vavřince." },
+      { nadpis: "KREV V ULICÍCH", text: "Tybalt vyprovokuje souboj, při kterém zabije Romeova přítele Merkucia. Romeo v pomstě zabije Tybalta a je vévodou vyhoštěn z Verony." },
+      { nadpis: "PLÁN A NÁPOJ", text: "Julie má být provdána za Parida. Vavřinec jí dá nápoj, po kterém bude 42 hodin vypadat jako mrtvá. Doufá, že si pro ni Romeo do hrobky přijede." },
+      { nadpis: "KATASTROFA", text: "Romeo se kvůli náhodě nedozví o plánu. Vnikne do hrobky, zabije truchlícího Parida a vypije jed. Julie se probudí, uvidí mrtvého Romea a probodne se dýkou. Rody se nad jejich těly usmíří." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Vítězství lásky nad nenávistí a nesmyslností rodových sporů." }],
+    forma: { polozky: [{ label: "JAZYK", hodnota: "Pětistopý jamb (blankvers) kombinovaný s prózou." }], tip: "Využití sonetů v dialozích (setkání na plese)." }
+  },
+  {
+    id: "zoo",
+    nazev: "My děti ze stanice Zoo",
+    autor: "Christiane F.",
+    rok: "1978",
+    litDruh: "Epika",
+    zaner: "Autobiografický román",
+    emoji: "💉",
+    akcent: "#451a03",
+    svetla: "#a8a29e",
+    infoAutor: {
+      smer: "Literatura faktu / Reportážní román",
+      soucasnici: "Kai Hermann a Horst Rieck (novináři, kteří příběh zapsali)",
+      zajimavosti: "Kniha vychází z nahrávek rozhovorů s tehdy 15letou Christiane.",
+      dila: "Můj druhý život (vydáno po mnoha letech jako reflexe dospělosti)"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "SOCIÁLNÍ PROSTŘEDÍ", text: "Západní Berlín 70. let. Sídliště Gropiusstadt jako symbol šedi, nudy a odcizení mládeže." },
+        { label: "DOPAD DÍLA", text: "Kniha vyvolala v Německu obrovskou debatu o drogách a selhání státu i rodiny." },
+        { label: "AUTENTICITA", text: "Využívá výpovědi matky, policistů a sociálních pracovníků pro objektivnější pohled." }
+      ], 
+      tip: "Klíčovým motivem je únik – z reality, z domova, z nudy." 
+    },
+    postavy: [
+      { jmeno: "Christiane", popis: "Dívka z rozvrácené rodiny, která propadne heroinu a dětské prostituci." },
+      { jmeno: "Detlev", popis: "Christianin přítel, také narkoman. Prodává se na stanici Zoo pro peníze na dávku." },
+      { jmeno: "Matka", popis: "Snaží se Christiane pomoci, ale dlouho si nechce připustit hloubku její závislosti." },
+      { jmeno: "Babsi", popis: "Christianina nejlepší kamarádka, která umírá na předávkování ve 14 letech." }
+    ],
+    dej: [
+      { nadpis: "CESTA K DROGÁM", text: "Christiane žije v nefunkční rodině. Začne navštěvovat klub 'Sound', nejdříve zkouší hašiš a prášky, aby zapadla do party." },
+      { nadpis: "HEROINOVÉ PEKLO", text: "Po koncertě Davida Bowieho zkusí heroin. Rychle se stává závislou. Spirála ji vede na stanici Bahnhof Zoo, kde si vydělává na drogy prostitucí." },
+      { nadpis: "ABSŤÁKY A SMRT", text: "Christiane a Detlev se několikrát pokusí o odvykání ('krocana') v bytě, ale vždy selžou. Její přátelé postupně umírají." },
+      { nadpis: "ODCHOD Z BERLÍNA", text: "Poté, co ji matka najde téměř mrtvou, ji odveze k babičce na venkov. Christiane se díky izolaci od prostředí zachrání." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Drsné varování před drogami a ukázka toho, jak snadno lze spadnout na dno." }],
+    forma: { polozky: [{ label: "JAZYK", hodnota: "Slang feťáků, syrové popisy, vulgarismy." }], tip: "Ich-forma zvyšuje naléhavost výpovědi." }
+  },
+  {
+    id: "hunger-games",
+    nazev: "Hunger Games",
+    autor: "Suzanne Collins",
+    rok: "2008",
+    litDruh: "Epika",
+    zaner: "Dystopický román",
+    emoji: "🏹",
+    akcent: "#7c2d12",
+    svetla: "#fb923c",
+    infoAutor: {
+      smer: "Současná světová literatura (Young Adult)",
+      soucasnici: "Veronica Roth (Divergence), J. K. Rowling",
+      zajimavosti: "Inspirací byl antický mýtus o Théseovi a Minotaurovi a válečné zpravodajství.",
+      dila: "Vražedná pomsta, Síla vzdoru, Balada o ptácích a hadech"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "DYSTOPIE", text: "Svět Panem v troskách Severní Ameriky. 12 krajů ovládaných bohatým Kapitolem." },
+        { label: "CHLÉB A HRY", text: "Odkaz na starý Řím – Kapitol baví lid krutou show, aby odvedl pozornost od útlaku." },
+        { label: "MÉDIA", text: "Kritika reality show a mediální manipulace s city diváků." }
+      ], 
+      tip: "Všimni si kontrastu mezi hladem v krajích a zbytečným přepychem v Kapitolu." 
+    },
+    postavy: [
+      { jmeno: "Katniss Everdeen", popis: "Nedobrovolná hrdinka, skvělá lovkyně, symbol revoluce (Reprodrozod)." },
+      { jmeno: "Peeta Mellark", popis: "Pekařův syn, mistr v manipulaci s davy a slovem, upřímně miluje Katniss." },
+      { jmeno: "Haymitch", popis: "Mentor, alkoholik a bývalý vítěz, který pomáhá Katniss přežít." },
+      { jmeno: "Prezident Snow", popis: "Chladný diktátor, který udržuje moc pomocí strachu a her." }
+    ],
+    dej: [
+      { nadpis: "SKLIZEŇ", text: "Katniss se dobrovolně přihlásí do her místo své sestry Prim. Spolu s Peetou odjíždí do Kapitolu, kde se musí prodat divákům." },
+      { nadpis: "ARÉNA", text: "V aréně bojuje 24 splátců. Katniss se spojí s malou Routou, jejíž smrt ji hluboce zasáhne. Aby získala přízeň diváků, předstírá s Peetou milostný vztah." },
+      { nadpis: "VZPOURA BOBULÍ", text: "Na konci zůstanou jen oni dva. Kapitol změní pravidla, aby se museli zabít. Katniss navrhne společnou sebevraždu otrávenými bobulemi." },
+      { nadpis: "VÍTĚZSTVÍ", text: "Kapitol raději povolí dva vítěze, než aby přišel o oba. Katniss se však stává terčem prezidenta Snowa, protože pokořila jeho systém." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Boj o přežití v totalitním systému a ztráta nevinnosti." }],
+    forma: { polozky: [{ label: "VYPRAVĚČ", hodnota: "Ich-forma v přítomném čase (dynamika)." }], tip: "Krátké věty, rychlý spád děje." }
+  },
+  {
+    id: "lakomec",
+    nazev: "Lakomec",
+    autor: "Molière",
+    rok: "1668",
+    litDruh: "Drama",
+    zaner: "Charakterová komedie",
+    emoji: "💰",
+    akcent: "#065f46",
+    svetla: "#34d399",
+    infoAutor: {
+      smer: "Klasicismus (vláda Ludvíka XIV. ve Francii)",
+      soucasnici: "Jean Racine, Pierre Corneille, Jean de La Fontaine",
+      zajimavosti: "Vlastním jménem Jean-Baptiste Poquelin. Zemřel krátce po dohrání své hry Zdravý nemocný.",
+      dila: "Tartuffe, Don Juan, Misantrop, Zdravý nemocný, Škola žen"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "PRAVIDLA JEDNOTY", text: "Dodržuje klasicistní pravidlo tří jednot: místa (jeden dům), času (24 hodin) a děje." },
+        { label: "LIDSKÉ TYPY", text: "Klasicismus se nezaměřuje na konkrétního člověka, ale na obecnou lidskou vlastnost (lakota)." },
+        { label: "INSPIRACE", text: "Základem byla antická Komedie o hrnci od římského autora Plauta." }
+      ], 
+      tip: "Harpagonovo jméno pochází z řeckého 'harpagi' – uchvatitel nebo hák." 
+    },
+    postavy: [
+      { jmeno: "Harpagon", popis: "60letý vdovec, lichvář, který nadevše miluje své peníze. Podezírá každého z krádeže." },
+      { jmeno: "Kleant", popis: "Harpagonův syn, zamilovaný do Marie. Je nucen otcem k sňatku s bohatou vdovou." },
+      { jmeno: "Štika", popis: "Kleantův sluha. Vychytralý a loajální svému pánovi, nikoliv Harpagonovi." },
+      { jmeno: "Mariana", popis: "Krásná chudá dívka, kterou si chce vzít Harpagon i Kleant." }
+    ],
+    dej: [
+      { nadpis: "MILOSTNÝ PROPLETENEC", text: "Harpagon chce Marii pro sebe, syna chce oženit s bohatou vdovou a dceru Elišku s Valérem. Děti se bouří." },
+      { nadpis: "KRÁDEŽ POKLADNIČKY", text: "Sluha Štika ukradne Harpagonovi kazetu s 30 000 franky. Harpagon šílí v nejslavnějším monologu hry ('Peníze, penízky mé drahé...')." },
+      { nadpis: "VÝMĚNNÝ OBCHOD", text: "Kleant nabídne otci, že mu peníze vrátí, pokud mu dovolí svatbu s Marií. Harpagon váhá, co miluje víc." },
+      { nadpis: "ŠŤASTNÝ KONEC", text: "Zjistí se, že Valér a Mariana jsou sourozenci a děti bohatého Anselma. Ten zaplatí obě svatby a Harpagon dostane zpět svou pokladničku." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Výsměch chorobné lakotě, která ničí rodinné vztahy a lidský charakter." }],
+    forma: { polozky: [{ label: "JAZYK", hodnota: "Próza (ve své době neobvyklé pro vysokou komedii)." }], tip: "Prvky commedia dell'arte (vychytralý sluha)." }
+  },
+  {
+    id: "kulicka",
+    nazev: "Kulička",
+    autor: "Guy de Maupassant",
+    rok: "1880",
+    litDruh: "Epika",
+    zaner: "Realistická novela",
+    emoji: "🎭",
+    akcent: "#b45309",
+    svetla: "#fbbf24",
+    infoAutor: {
+      smer: "Francouzský realismus a naturalismus",
+      soucasnici: "Gustave Flaubert (jeho mentor), Émile Zola, Honoré de Balzac",
+      zajimavosti: "Byl to mistr povídky a novely s nečekaným závěrem. Zemřel v ústavu pro duševně choré.",
+      dila: "Miláček, Horla, Příběhy dne a noci, Mont-Oriol"
+    },
+    kontext: { 
+      odstavce: [
+        { label: "VÁLKA", text: "Děj se odehrává v roce 1870 během prusko-francouzské války při útěku z okupovaného Rouenu." },
+        { label: "NATURALISMUS", text: "Syrové zobrazení lidských charakterů v krizové situaci. Žádné přikrášlování." },
+        { label: "MRAVNOST", text: "Kniha byla po vydání skandální, protože ukazuje prostitutku jako morálnější než měšťany." }
+      ], 
+      tip: "Kulička je přezdívka – symbolizuje její postavu (malá, kulatá, kyprá)." 
+    },
+    postavy: [
+      { jmeno: "Kulička", popis: "Vlastním jménem Alžběta Roussetová. Prostitutka, která je hrdou francouzskou vlastenkou." },
+      { jmeno: "Měšťané a šlechta", popis: "Tři páry reprezentující vyšší společnost. Jsou pokrytečtí, sobečtí a zbabělí." },
+      { jmeno: "Pruský důstojník", popis: "Symbol arogantního nepřítele, který zneužívá svou moc." }
+    ],
+    dej: [
+      { nadpis: "CESTA DOSTAVNÍKEM", text: "Skupina deseti lidí prchá z okupovaného města. Cesta trvá dlouho, měšťané mají hlad, ale Kulička má plný koš jídla a štědře se s nimi rozdělí." },
+      { nadpis: "ZASTÁVKA", text: "V hostinci je zastaví pruský důstojník. Nechce nikoho pustit dál, dokud s ním Kulička nestráví noc. Kulička z vlastenectví odmítá." },
+      { nadpis: "MANIPULACE", text: "Cestující chtějí jet dál. Začnou na Kuličku tlačit, citově ji vydírat a přesvědčovat o 'oběti'. Dokonce i jeptiška ji nepřímo nutí svolit." },
+      { nadpis: "ZRADA", text: "Kulička se obětuje. Druhý den je skupina volná, ale měšťané se k ní chovají s hlubokým opovržením. Když mají hlad, nikdo jí nenabídne sousto a ona pláče v rohu." }
+    ],
+    myslenky: [{ nadpis: "HLAVNÍ MYŠLENKA", text: "Kritika měšťanské morálky, která se ohání ctí, ale v jádru je hnilobná a falešná." }],
+    forma: { polozky: [{ label: "KOMPOZICE", hodnota: "Er-forma, chronologický děj, sevřená struktura novely." }], tip: "Kontrast mezi chladným zimním počasím a vřelostí Kuliččina jídla." }
+  }
+];
+
+const TABS = [
+  { id: 'autor', label: 'Autor' },
+  { id: 'kontext', label: 'Kontext' },
+  { id: 'postavy', label: 'Postavy' },
+  { id: 'dej', label: 'Děj' },
+  { id: 'myslenky', label: 'Myšlenky' },
+  { id: 'forma', label: 'Forma' }
+];
+
+function buildSlides() {
+  const container = document.getElementById('scroll-container');
+  const dotsEl = document.getElementById('dots');
+  container.innerHTML = '';
+  dotsEl.innerHTML = '';
+
+  knihy.forEach((k, idx) => {
+    const styleId = 'style-' + k.id;
+    if(!document.getElementById(styleId)) {
+        const s = document.createElement('style');
+        s.id = styleId;
+        s.textContent = `[data-id="${k.id}"] .tab.active { color:${k.svetla}; border-bottom-color:${k.akcent}; } [data-id="${k.id}"] .tip-label { color:${k.svetla}; }`;
+        document.head.appendChild(s);
+    }
+
+    const slide = document.createElement('div');
+    slide.className = 'book-slide';
+    slide.id = "slide-" + k.id;
+    slide.dataset.id = k.id;
+    slide.dataset.index = idx;
+
+    slide.innerHTML = `
+      <div style="position:absolute; inset:0; z-index:0; background:radial-gradient(circle at 10% 10%, ${k.akcent}20 0%, transparent 60%)"></div>
+      <div class="slide-header">
+        <span class="slide-emoji">${k.emoji}</span>
+        <h1 class="slide-title">${k.nazev}</h1>
+        <p class="slide-meta">${k.autor} · ${k.rok}<br><span style="color:white; font-weight:600;">${k.litDruh} / ${k.zaner}</span></p>
+      </div>
+      <div class="tab-bar">${TABS.map((t, i) => `<div class="tab${i===0?' active':''}" data-tab="${t.id}">${t.label}</div>`).join('')}</div>
+      <div class="sections-area">
+        <div class="section visible sec-autor">
+          <div class="tip-box"><strong class="tip-label">Literární směr</strong><p class="context-text">${k.infoAutor.smer}</p></div>
+          <div class="tip-box"><strong class="tip-label">Současníci</strong><p class="context-text">${k.infoAutor.soucasnici}</p></div>
+          <div class="tip-box"><strong class="tip-label">Klíčová díla</strong><p class="context-text">${k.infoAutor.dila}</p></div>
+          <div class="tip-box"><strong class="tip-label">Zajímavosti</strong><p class="context-text">${k.infoAutor.zajimavosti}</p></div>
+        </div>
+        
+        <div class="section sec-kontext">
+          ${k.kontext.odstavce.map(o => `<div class="tip-box"><strong class="tip-label">${o.label}</strong><p class="context-text">${o.text}</p></div>`).join('')}
+          <div class="tip-box"><strong class="tip-label">💡 Maturitní tip</strong><p class="context-text">${k.kontext.tip}</p></div>
+        </div>
+
+        <div class="section sec-postavy">${k.postavy.map(p => `<div class="tip-box"><strong class="tip-label">${p.jmeno}</strong><p class="context-text">${p.popis}</p></div>`).join('')}</div>
+        <div class="section sec-dej">${k.dej.map(d => `<div class="tip-box"><strong class="tip-label">${d.nadpis}</strong><p class="context-text">${d.text}</p></div>`).join('')}</div>
+        <div class="section sec-myslenky">${k.myslenky.map(m => `<div class="tip-box"><strong class="tip-label">${m.nadpis}</strong><p class="context-text">${m.text}</p></div>`).join('')}</div>
+        <div class="section sec-forma">
+          ${k.forma.polozky.map(f => `<div class="tip-box"><strong class="tip-label">${f.label}</strong><p class="context-text">${f.hodnota}</p></div>`).join('')}
+          <div class="tip-box"><strong class="tip-label">Způsob vyprávění</strong><p class="context-text">${k.forma.tip}</p></div>
+        </div>
+      </div>
+    `;
+
+    slide.querySelectorAll('.tab').forEach(tabEl => {
+      tabEl.addEventListener('click', () => {
+        slide.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tabEl.classList.add('active');
+        slide.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+        slide.querySelector('.sec-' + tabEl.dataset.tab).classList.add('visible');
+      });
+    });
+
+    container.appendChild(slide);
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (idx===0?' active':'');
+    dot.addEventListener('click', () => slide.scrollIntoView({ behavior: 'smooth' }));
+    dotsEl.appendChild(dot);
+  });
+}
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  searchResults.innerHTML = '';
+  if (q.length > 0) {
+    // Opraveno: hledá jen shody od začátku názvu
+    const matches = knihy.filter(k => k.nazev.toLowerCase().startsWith(q));
+    if (matches.length > 0) {
+      matches.forEach(match => {
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.textContent = match.nazev;
+        item.onclick = () => {
+          document.getElementById('slide-' + match.id).scrollIntoView({ behavior: 'smooth' });
+          searchResults.style.display = 'none';
+          searchInput.value = '';
+        };
+        searchResults.appendChild(item);
+      });
+      searchResults.style.display = 'block';
+    } else { searchResults.style.display = 'none'; }
+  } else { searchResults.style.display = 'none'; }
+});
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      const idx = e.target.dataset.index;
+      document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i == idx));
+    }
+  });
+}, { threshold: 0.5 });
+
+buildSlides();
+document.querySelectorAll('.book-slide').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
